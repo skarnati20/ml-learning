@@ -24,19 +24,16 @@ class MnistDataloader(object):
             if magic != 2051:
                 raise ValueError('Magic number mismatch, expected 2051, got {}'.format(magic))
             image_data = array("B", file.read())    
-        
-        if num_images > size:
-            raise ValueError('Requested number of images exceeds total number in dataset')
                 
         images = []
-        for i in range(num_images):
+        for i in range(size):
             images.append([0] * rows * cols)
-        for i in range(num_images):
+        for i in range(size):
             img = np.array(image_data[i * rows * cols:(i + 1) * rows * cols])
             img = img.reshape(28, 28)
             images[i][:] = img            
         
-        return images, labels
+        return images[:num_images], labels[:num_images]
     
     def convert_to_result_arr(self, input: int) -> np.ndarray:
         if input < 0 or input > 9:
@@ -55,7 +52,7 @@ class MnistDataloader(object):
         x_test = np.array([np.matrix(np.concatenate(x)).T / 255 for x in x_test])
         
         # Make output in expected form
-        y_train = np.array([self.convert_to_result_arr(i) for i in y_train])
-        y_test = np.array([self.convert_to_result_arr(i) for i in y_test])
+        y_train = np.array([np.matrix(self.convert_to_result_arr(i)).T for i in y_train])
+        y_test = np.array([np.matrix(self.convert_to_result_arr(i)).T for i in y_test])
         
         return (x_train, y_train),(x_test, y_test)

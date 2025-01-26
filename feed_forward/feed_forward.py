@@ -59,7 +59,10 @@ def create_ffnn(layers_spec: List[int]) -> FFNN:
 
 
 def sigmoid_function(x: float) -> float:
-    return 1 / (1 + np.exp(-x))
+    if x < 0:
+        return np.exp(x) / (1 + np.exp(x))
+    else:
+        return 1 / (1 + np.exp(-x))
 
 
 def sigmoid_function_derivative(input: np.ndarray) -> np.ndarray:
@@ -135,14 +138,17 @@ def back_propogate(nn: FFNN, learning_rate: float, true_output: np.ndarray):
         print(error)
 
 
-def train(nn: FFNN, learning_rate: float, epochs: int, training_set: List[tuple[np.ndarray, np.ndarray]]):
+def train(nn: FFNN, learning_rate: float, epochs: int, training_input: np.ndarray, training_output: np.ndarray):
     if epochs < 1:
         print("Error - train: Must have a positive integer for number of epochs")
         return
-
-    training_set_copy = training_set.copy()
+    if len(training_input) != len(training_output):
+        print("Error - train: training input and output have different sizes")
+        return
+    
+    training_set_copy = list(zip(training_input, training_output))
     for _ in range(epochs):
-        training_set_copy.shuffle()
+        random.shuffle(training_set_copy)
         for (input, output) in training_set_copy:
             forward_propogate(nn, input)
             back_propogate(nn, learning_rate, output)

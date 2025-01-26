@@ -1,4 +1,6 @@
+import numpy as np
 from tools.mnist_loader import MnistDataloader
+from feed_forward.feed_forward import FFNN, create_ffnn, train, process
 from os.path  import join
 
 input_path = 'mnist'
@@ -9,3 +11,10 @@ test_labels_filepath = join(input_path, 't10k-labels-idx1-ubyte/t10k-labels-idx1
 
 mnist_dataloader = MnistDataloader(training_images_filepath, training_labels_filepath, test_images_filepath, test_labels_filepath)
 (x_train, y_train), (x_test, y_test) = mnist_dataloader.load_data(20)
+
+nn = create_ffnn([784, 100, 10])
+print(process(nn, x_test[0]))
+print(y_test[0])
+train(nn, 0.005, 1, x_train, y_train)
+print(process(nn, x_test[0]))
+print(y_test[0])
