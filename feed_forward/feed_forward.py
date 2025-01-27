@@ -8,7 +8,8 @@ class FFNN:
     def __init__(self):
         self.weights = []
         self.bias = []
-        self.node_values = []
+        self.node_values = []  # Sigmoid activated values
+        self.pre_activation_values = []  # Values before sigmoid activation
 
     def initialize_empty_weights(self, layers_spec: List[int]):
         new_weights = []
@@ -35,7 +36,7 @@ class FFNN:
 
             stdev = math.sqrt(2 / (inLayer + outLayer))
             new_weights.append(np.random.normal(loc=0, scale=stdev, size=(outLayer, inLayer)))
-            new_bias.append(np.random.normal(loc=0, scale=stdev, size=(outLayer, 1)))  # Fix bias initialization
+            new_bias.append(np.random.normal(loc=0, scale=stdev, size=(outLayer, 1)))
         
         self.weights = new_weights
         self.bias = new_bias
@@ -62,13 +63,17 @@ def sigmoid_function_derivative(x: np.ndarray) -> np.ndarray:
 def forward_propogate(nn: FFNN, input: np.ndarray):
     try:
         nn.node_values.clear()
+        nn.pre_activation_values.clear()
         curr = input.reshape(-1, 1)  # Ensure column vector format
         nn.node_values.append(curr)
+        nn.pre_activation_values.append(curr)  # Input layer has no activation
 
         for i in range(len(nn.weights)):
             weights = nn.weights[i]
             bias = nn.bias[i]
-            curr = sigmoid_function(np.matmul(weights, curr) + bias)
+            pre_activation = np.matmul(weights, curr) + bias
+            nn.pre_activation_values.append(pre_activation)
+            curr = sigmoid_function(pre_activation)
             nn.node_values.append(curr)
 
         return curr
@@ -95,16 +100,18 @@ def back_propogate(nn: FFNN, learning_rate: float, true_output: np.ndarray):
         layer_ptr = len(nn.node_values) - 1
 
         error_func_deriv = nn.node_values[layer_ptr] - true_output.reshape(-1, 1)
-        sigmoid_deriv = sigmoid_function_derivative(nn.node_values[layer_ptr])
+        # Calculate sigmoid derivative using pre-activation values
+        sigmoid_deriv = sigmoid_function_derivative(sigmoid_function(nn.pre_activation_values[layer_ptr]))
         curr_sigma = np.multiply(error_func_deriv, sigmoid_deriv)
 
         while layer_ptr > 0:
             gradient = np.matmul(curr_sigma, nn.node_values[layer_ptr - 1].T)
             error_weight_gradients.insert(0, gradient)
-            error_bias_gradients.insert(0, np.sum(curr_sigma, axis=1, keepdims=True))  # Fix bias updates
+            error_bias_gradients.insert(0, np.sum(curr_sigma, axis=1, keepdims=True))
 
             if layer_ptr > 1:
-                sigmoid_deriv = sigmoid_function_derivative(nn.node_values[layer_ptr - 1])
+                # Calculate sigmoid derivative using pre-activation values
+                sigmoid_deriv = sigmoid_function_derivative(sigmoid_function(nn.pre_activation_values[layer_ptr - 1]))
                 curr_sigma = np.multiply(np.matmul(nn.weights[layer_ptr - 1].T, curr_sigma), sigmoid_deriv)
             
             layer_ptr -= 1
@@ -115,7 +122,7 @@ def back_propogate(nn: FFNN, learning_rate: float, true_output: np.ndarray):
     try:
         for i in range(len(error_weight_gradients)):
             nn.weights[i] -= learning_rate * error_weight_gradients[i]
-            nn.bias[i] -= learning_rate * error_bias_gradients[i]  # Update biases properly
+            nn.bias[i] -= learning_rate * error_bias_gradients[i]
     except Exception as error:
         print("Error - back_propogate: Error updating weights and biases")
         print(error)

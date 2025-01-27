@@ -10,7 +10,7 @@ test_images_filepath = join(input_path, 't10k-images-idx3-ubyte/t10k-images-idx3
 test_labels_filepath = join(input_path, 't10k-labels-idx1-ubyte/t10k-labels-idx1-ubyte')
 
 mnist_dataloader = MnistDataloader(training_images_filepath, training_labels_filepath, test_images_filepath, test_labels_filepath)
-(x_train, y_train), (x_test, y_test) = mnist_dataloader.load_data(5000)
+(x_train, y_train), (x_test, y_test) = mnist_dataloader.load_data(10000)
 
 def softmax(x):
     """Compute softmax values for each set of scores in x."""
@@ -18,6 +18,6 @@ def softmax(x):
     return e_x / e_x.sum(axis=0)
 
 nn = create_ffnn([784, 100, 10])
-train(nn, 0.1, 4, x_train, y_train)
+train(nn, 0.2, 4, x_train, y_train)
 print(softmax(process(nn, x_test[0])))
 print(y_test[0])
